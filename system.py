@@ -64,6 +64,26 @@ class System(object):
             l_consist = l_consist and exp_orbit == hop_orbit
         return l_consist
 
+    def get_params(self, atom_1_i, atom_2_i, image_i):
+        """ return parameters dictionary
+        """
+        if self.scale_params is None:
+            return self.params
+        else:
+            atoms = self.structure.atoms
+            pair = '{}{}'.format(atoms[atom_1_i].element,atoms[atom_2_i].element)
+            d_0 = self.scale_params[pair]['d_0']
+            d = self.structure.dist_mat[image_i, atom_1_i, atom_2_i]
+            factor = (d_0 / float(d))
+
+            params_scaled = dict()
+            hop_params = self.params[pair]
+            scale_params = self.scale_params[pair]
+            for key, hop in hop_params.iteritems():
+                orbit = key.replace('V_', 'n_')
+                params_scaled[key] = hop * factor ** scale_params[orbit]
+            return params_scaled
+
 
 class Structure(object):
     """ atomic structure

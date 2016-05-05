@@ -76,11 +76,11 @@ class Hamiltonian(object):
                 return dist_vec / np.linalg.norm(dist_vec)
 
         params = self.system.params
+
         # TODO spin interactions
 
         # off-diagonal
         dist_mat_vec = self.system.structure.dist_mat_vec
-        dist_mat = self.system.structure.dist_mat
         bond_mat = self.system.structure.bond_mat
 
         # add scaling function
@@ -89,24 +89,25 @@ class Hamiltonian(object):
                 # only lower lower-triangular part
                 if ind_2 >= ind_1:
                     continue
-                param_element = params['{}{}'.format(element_1, element_2)]
 
                 hop_int = HOPPING_INTEGRALS[Hamiltonian.get_orb_ind(orbit_1)][Hamiltonian.get_orb_ind(orbit_2)]
-                hop_int = hop_int.subs(param_element)
 
                 for image_ind in range(self.system.structure.max_image):
                     # skip unbonded pairs
                     if bond_mat[image_ind, atom_1_i, atom_2_i] == 0:
                         continue
-                    # print hop_int
+
+                    param_element = params['{}{}'.format(element_1, element_2)]
+                    param_element = self.system.get_params(atom_1_i, atom_2_i, image_ind)
+                    hop_int_ele = hop_int.subs(param_element)
                     # get direction cosines
                     dist_vec = dist_mat_vec[image_ind, atom_1_i, atom_2_i, :]
                     l, m, n = get_dir_cos(dist_vec)
-
                     param_lmn = dict({'l': l, 'm': m, 'n': n,})
+
                     # sympy might be slow 
                     # May be just function is enough?
-                    hop_int_ = hop_int.subs(param_lmn)
+                    hop_int_ = hop_int_ele.subs(param_lmn)
 
                     self.H_wo_g[image_ind, ind_1, ind_2] = hop_int_.subs(param_element)
         
@@ -161,16 +162,13 @@ def main():
 
     fcc_ge_ham = Hamiltonian(fcc_ge_sys)
     fcc_ge_ham.calc_ham_wo_k()
-    # np.savetxt('H_wo_g', np.sum(fcc_ge_ham.H_wo_g, axis=0).real, fmt='%.2f', delimiter='\t')
     ham = fcc_ge_ham.get_ham(np.array([0, 0, 0]))
-    # np.savetxt('H', ham.real, fmt='%.2f', delimiter='\t')
-    # np.savetxt('g_mat', np.sum(fcc_ge_ham.g_mat, axis=0).real, fmt='%.2f', delimiter='\t')
 
     kpts_1 = get_kpt_path([np.array([0., 0., 0]),
                            np.array([0.0, 0.5, 0.5]),
-                           np.array([1/4., 5/8., 5/8.])], 30)
+                           np.array([1/4., 5/8., 5/8.])], 100)
     kpts_2 = get_kpt_path([np.array([3/8., 3/4., 3/8.]),
-                           np.array([0, 0, 0])], 30)
+                           np.array([0, 0, 0])], 100)
     kpts = kpts_1 + kpts_2
 
     kpts_len_1 = get_kpt_len(kpts_1, fcc_ge_sys.structure.lattice.get_matrix())
@@ -189,7 +187,7 @@ def main():
     eigs_k = np.array(eigs_k).T
     
     import matplotlib.pyplot as plt
-    for i, eigs in enumerate(eigs_k[:]):
+    for i, eigs in enumerate(eigs_k[:8]):
         x = kpts_len
         plt.plot(x, eigs, '-', color='#FF00FF')
     plt.show()
