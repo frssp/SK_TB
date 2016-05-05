@@ -6,7 +6,7 @@ from tb_params import HOPPING_INTEGRALS
 
 
 class Hamiltonian(object):
-    E_PREFIX = 'e'
+    E_PREFIX = 'e_'
     def __init__(self, system):
         self.system = system
         self.n_orbitals = len(self.system.all_orbitals)
@@ -68,6 +68,12 @@ class Hamiltonian(object):
                             }
                         }
         """
+        def get_dir_cos(dist_vec):
+            if np.linalg.norm(dist_vec) == 0:
+                return 0, 0, 0
+            else:
+                return dist_vec / np.linalg.norm(dist_vec)
+
         params = self.system.params
         # TODO spin interactions
         # diagonal
@@ -79,15 +85,11 @@ class Hamiltonian(object):
             H_ind += 1
 
         # off-diagonal
-        def get_dir_cos(dist_vec):
-            if np.linalg.norm(dist_vec) == 0:
-                return 0, 0, 0
-            else:
-                return dist_vec / np.linalg.norm(dist_vec)
-
         dist_mat_vec = self.system.structure.dist_mat_vec
+        dist_mat = self.system.structure.dist_mat
         bond_mat = self.system.structure.bond_mat
 
+        # add scaling function
         for ind_1, (atom_1_i, orbit_1_i, element_1, orbit_1) in enumerate(self.system.all_iter):
             for ind_2, (atom_2_i, orbit_2_i, element_2, orbit_2) in enumerate(self.system.all_iter):
 

@@ -5,14 +5,18 @@ import itertools
 class System(object):
     """ atomics structures and tight_binding parameters 
     """
-    def __init__(self, structure, orbitals, parameters):
+    def __init__(self, structure, orbitals, parameters, scale_params=None):
         self.structure = structure
         self.orbitals = orbitals
         self.set_orbitals()
         self.all_orbitals = self.get_all_orbitals()
         self.all_iter = self.get_all_iter()
         self.params = parameters
+        self.scale_params = scale_params
+
         assert self.params.keys() == self.get_param_key(), 'wrong parameter set'
+        assert self.chk_scale_param_key(), \
+               'The hoping parameters and the exponent parameters are not consistent!'
 
     def set_orbitals(self):
         for atom in self.structure.atoms:
@@ -40,6 +44,26 @@ class System(object):
             key_list.append(''.join(key))
         return key_list
 
+    def chk_scale_param_key(self):
+        """ check if hoping parameters and exponent parameters are consistent
+        """
+        if self.scale_params is None:
+            return True
+        elements = self.structure.get_elements()
+        key_list = []
+        for key in itertools.product(elements, repeat=2):
+            key_list.append(''.join(key))
+        
+        # compare hopping term and exponent
+        l_consist = True
+        for pair in key_list:
+            hop_orbit = set([hop.replace('V_', '') for hop in self.params[pair]])
+            exp_orbit = set([hop.replace('n_', '') for hop in self.scale_params[pair]
+                             if 'n_' in hop])
+            
+            l_consist = l_consist and exp_orbit == hop_orbit
+        return l_consist
+
 
 class Structure(object):
     """ atomic structure
@@ -65,6 +89,7 @@ class Structure(object):
 
         self.bond_mat = self.get_bond_mat()
         self.dist_mat_vec = self.get_dist_matrix_vec()
+        self.dist_mat = self.get_dist_matrix()
 
     def get_bond_mat(self):
         max_image = self.max_image
@@ -223,94 +248,87 @@ class Atom:
 
 
 def fcc_ge_sys():
-    # params = {
-    #     'Ge': {
-    #         'es': 0,
-    #         'ep': 7.20,
-    #     },
-    #     'GeGe': {
-    #         'Vsss': -8.13 / 4.,
-    #         'Vsps': 5.88 * np.sqrt(3) / 4.,
-    #         'Vpps': (3.17 + 2 * 7.51) / 4. ,
-    #         'Vppp': (3.17 - 7.51) / 4.,
-    #     }
-    # }
-    # params = {
-    #     'Ge': {
-    #         'es': 0,
-    #         'ep': 8.41,
-    #     },
-    #     'GeGe': {
-    #         'Vsss': -6.78 / 4.,
-    #         'Vsps': 5.91 * np.sqrt(3) / 4.,
-    #         'Vpps': (2.62 + 2 * 6.82) / 4. ,
-    #         'Vppp': (2.62 - 6.82) / 4.,
-    #     }
-    # }
     params = {
         'Ge': {
-            'es': -2.55247,
-            'ep': 4.48593,
-            'ed': 14.01053,
-            'eS': 23.44607,
+            'e_s': -2.55247,
+            'e_p': 4.48593,
+            'e_d': 14.01053,
+            'e_S': 23.44607,
         },
         'GeGe': {
-            'Vsss': -1.86600,
-            'Vsps': 2.91067,
-            'Vppp': -1.49207,
-            'Vpps': 4.08481,
+            'V_sss': -1.86600,
+            'V_sps': 2.91067,
+            'V_ppp': -1.49207,
+            'V_pps': 4.08481,
 
-            'Vsds': -2.23992,
-            'Vpds': -1.66657,
-            'Vpdp': 2.39936,
-            'Vdds': -1.82945,
-            'Vddp': 3.08177,
-            'Vddd': -1.56676,
+            'V_sds': -2.23992,
+            'V_pds': -1.66657,
+            'V_pdp': 2.39936,
+            'V_dds': -1.82945,
+            'V_ddp': 3.08177,
+            'V_ddd': -1.56676,
             
-            'VSSs': -4.51331,
-            'VsSs': -1.39107,
-            'VSps': 3.06822,
-            'VSds': -0.77711
+            'V_SSs': -4.51331,
+            'V_sSs': -1.39107,
+            'V_Sps': 3.06822,
+            'V_Sds': -0.77711
         }
     }
+    # PhysRevB.57.6493
     params = {
         'Ge': {
-            'es': -3.2967,
-            'ep': 4.6560,
-            'ed': 13.0143,
-            'eS': 19.1725,
+            'e_s': -3.2967,
+            'e_p': 4.6560,
+            'e_d': 13.0143,
+            'e_S': 19.1725,
         },
         'GeGe': {
-            'Vsss': -1.5003,
-            'VSSs': -3.6029,
-            'VsSs': -1.9206,
+            'V_sss': -1.5003,
+            'V_SSs': -3.6029,
+            'V_sSs': -1.9206,
 
-            'Vsps': 2.7986,
-            'VSps': 2.8177,
-            'Vsds': -2.8028,
-            'VSds': -0.6209,
+            'V_sps': 2.7986,
+            'V_Sps': 2.8177,
+            'V_sds': -2.8028,
+            'V_Sds': -0.6209,
             
-            'Vpps': 4.2541,
-            'Vppp': -1.6510,
+            'V_pps': 4.2541,
+            'V_ppp': -1.6510,
 
-            'Vpds': -2.2138,
-            'Vpdp': 1.9001,
+            'V_pds': -2.2138,
+            'V_pdp': 1.9001,
 
-            'Vdds': -1.2172,
-            'Vddp': 2.5054,
-            'Vddd': -2.1389,
+            'V_dds': -1.2172,
+            'V_ddp': 2.5054,
+            'V_ddd': -2.1389,
             
+        }
+    }
+    # PhysRevB.57.6493
+    scale_params = {
+        'GeGe':{
+            'd_0': 5.6563 * np.sqrt(3) / 4.,
+            'n_sss': 3.631,
+            'n_SSs': 0, 'n_sSs': 0,
+            'n_sps': 3.713,
+            'n_pps': 2.030,
+            'n_ppp': 4.025,
+            'n_sds': 1.931,
+            'n_Sps': 1.830,
+            'n_pds': 1.759,
+            'n_pdp': 1.872,
+            'n_dds': 2., 'n_ddp': 2., 'n_ddd': 2., 'n_Sds': 2.
         }
     }
     orbitals = {'Ge': ['s', 'px', 'py', 'pz', 'dxy', 'dyz', 'dxz', 'dx2-y2', 'dz2', 'S']}
-    # orbitals = {'Ge': ['s', 'px', 'py', 'pz', 'S']}
-    # orbitals = {'Si': ['s']}
+
     fcc_ge = fcc_ge_struct()
-    fcc_ge_sys = System(fcc_ge, orbitals, params)
+    fcc_ge_sys = System(fcc_ge, orbitals, params, scale_params)
+
     return fcc_ge_sys
 
 def fcc_ge_struct():
-    a = 5.43
+    a = 5.6563
     lat = Lattice(np.array([1 / 2. * np.array([1., 1., 0.]),
                             1 / 2. * np.array([0., 1., 1.]),
                             1 / 2. * np.array([1., 0., 1.])]), a)
