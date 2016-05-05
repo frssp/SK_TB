@@ -69,6 +69,7 @@ class Hamiltonian(object):
                         }
         """
         def get_dir_cos(dist_vec):
+            """ return directional cos of distance vector """
             if np.linalg.norm(dist_vec) == 0:
                 return 0, 0, 0
             else:
@@ -76,13 +77,6 @@ class Hamiltonian(object):
 
         params = self.system.params
         # TODO spin interactions
-        # diagonal
-        H_ind = 0
-        for element, orbit in self.system.all_orbitals:
-            e_ele = params[element]\
-                          ['{}{}'.format(Hamiltonian.E_PREFIX, orbit[0])]
-            self.H_wo_g[0, H_ind, H_ind] = e_ele
-            H_ind += 1
 
         # off-diagonal
         dist_mat_vec = self.system.structure.dist_mat_vec
@@ -92,7 +86,9 @@ class Hamiltonian(object):
         # add scaling function
         for ind_1, (atom_1_i, orbit_1_i, element_1, orbit_1) in enumerate(self.system.all_iter):
             for ind_2, (atom_2_i, orbit_2_i, element_2, orbit_2) in enumerate(self.system.all_iter):
-
+                # only lower lower-triangular part
+                if ind_2 >= ind_1:
+                    continue
                 param_element = params['{}{}'.format(element_1, element_2)]
 
                 hop_int = HOPPING_INTEGRALS[Hamiltonian.get_orb_ind(orbit_1)][Hamiltonian.get_orb_ind(orbit_2)]
@@ -113,6 +109,17 @@ class Hamiltonian(object):
                     hop_int_ = hop_int.subs(param_lmn)
 
                     self.H_wo_g[image_ind, ind_1, ind_2] = hop_int_.subs(param_element)
+        
+        # real hermitian -> symmetric
+        self.H_wo_g += np.transpose(self.H_wo_g, [0, 2, 1])
+
+        # diagonal
+        H_ind = 0
+        for element, orbit in self.system.all_orbitals:
+            e_ele = params[element]\
+                          ['{}{}'.format(Hamiltonian.E_PREFIX, orbit[0])]
+            self.H_wo_g[0, H_ind, H_ind] = e_ele
+            H_ind += 1
 
 def get_kpt_path(sp_kpts, kpt_den=10):
     kpts = []
@@ -154,13 +161,12 @@ def main():
 
     fcc_ge_ham = Hamiltonian(fcc_ge_sys)
     fcc_ge_ham.calc_ham_wo_k()
-    np.savetxt('H_wo_g', np.sum(fcc_ge_ham.H_wo_g, axis=0).real, fmt='%.2f', delimiter='\t')
+    # np.savetxt('H_wo_g', np.sum(fcc_ge_ham.H_wo_g, axis=0).real, fmt='%.2f', delimiter='\t')
     ham = fcc_ge_ham.get_ham(np.array([0, 0, 0]))
-    np.savetxt('H', ham.real, fmt='%.2f', delimiter='\t')
-    np.savetxt('g_mat', np.sum(fcc_ge_ham.g_mat, axis=0).real, fmt='%.2f', delimiter='\t')
+    # np.savetxt('H', ham.real, fmt='%.2f', delimiter='\t')
+    # np.savetxt('g_mat', np.sum(fcc_ge_ham.g_mat, axis=0).real, fmt='%.2f', delimiter='\t')
 
-    kpts_1 = get_kpt_path([np.array([0.5, 0.5, 0.5]),
-                           np.array([0., 0., 0]),
+    kpts_1 = get_kpt_path([np.array([0., 0., 0]),
                            np.array([0.0, 0.5, 0.5]),
                            np.array([1/4., 5/8., 5/8.])], 30)
     kpts_2 = get_kpt_path([np.array([3/8., 3/4., 3/8.]),
@@ -184,7 +190,6 @@ def main():
     
     import matplotlib.pyplot as plt
     for i, eigs in enumerate(eigs_k[:]):
-        # x = range(len(eigs))
         x = kpts_len
         plt.plot(x, eigs, '-', color='#FF00FF')
     plt.show()
