@@ -1,7 +1,7 @@
 import yaml
 import system
 
-class sys_input():
+class Sys_input():
     def __init__(self, input_file_name='./input.yaml'):
         with open(input_file_name) as _:
             conf = yaml.safe_load(_)
@@ -28,6 +28,6 @@ class sys_input():
 
 if __name__ == '__main__':
     """ test """
-    sys_input = sys_input('./input.yaml')
+    sys_input = Sys_input('./input.yaml')
     sys_input.get_system()
     
