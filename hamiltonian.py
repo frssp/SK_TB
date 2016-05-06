@@ -12,6 +12,7 @@ class Hamiltonian(object):
         self.n_orbitals = len(self.system.all_orbitals)
         self.H_wo_g = np.zeros((self.system.structure.max_image, 
                                 self.n_orbitals, self.n_orbitals), dtype=complex)
+        self.calc_ham_wo_k()
 
     @staticmethod
     def get_orb_ind(orbit):
@@ -159,10 +160,7 @@ def get_kpt_len(kpts, lat_mat):
 def main():
     np.set_printoptions(precision=3)
     fcc_ge_sys = system.fcc_ge_sys()
-
     fcc_ge_ham = Hamiltonian(fcc_ge_sys)
-    fcc_ge_ham.calc_ham_wo_k()
-    ham = fcc_ge_ham.get_ham(np.array([0, 0, 0]))
 
     kpts_1 = get_kpt_path([np.array([0., 0., 0]),
                            np.array([0.0, 0.5, 0.5]),
