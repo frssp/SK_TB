@@ -1,5 +1,6 @@
 import numpy as np
 import itertools
+from vasp_io import readPOSCAR
 
 
 class System(object):
@@ -89,7 +90,7 @@ class Structure(object):
     """ atomic structure
     """
 
-    def __init__(self, lattice, atoms, bond_length=2.7, periodicity=None, name=None):
+    def __init__(self, lattice, atoms, NN_length=2.7, periodicity=None, name=None):
         """Args:
             lattice:
                 Lattice object
@@ -103,7 +104,7 @@ class Structure(object):
         self.name = name or 'system'
         self.lattice = lattice
         self.atoms = atoms
-        self.bond_length = bond_length
+        self.NN_length = NN_length
         self.periodicity = periodicity or [True, True, True]
         self.max_image = 3 ** np.sum(self.periodicity)
 
@@ -116,7 +117,7 @@ class Structure(object):
         n_atom = len(self.atoms)
         bond_mat = np.zeros((max_image, n_atom, n_atom))
         dist_mat = self.get_dist_matrix()
-        bond_mat = dist_mat < self.bond_length
+        bond_mat = dist_mat < self.NN_length
         bond_mat_2 = dist_mat > 0
 
         return bond_mat * bond_mat_2
@@ -165,6 +166,21 @@ class Structure(object):
         """return list of elements eg) ['Si', 'O']"""
         from collections import OrderedDict
         return list(OrderedDict.fromkeys([atom.element for atom in self.atoms]))
+
+
+    @staticmethod
+    def read_poscar(file_name='./POSCAR', kwargs={}):
+        lat_const, lattice_mat, atom_set_direct, dynamics = readPOSCAR(fileName=file_name)
+
+        atoms = []
+        for a in atom_set_direct:
+            atoms.append(Atom(a[0], a[1]))
+
+        bravais_lat = np.array(lattice_mat)
+        lattice = Lattice(bravais_lat, lat_const)
+
+        structure = Structure(lattice, atoms, **kwargs)
+        return structure
 
 
 class Lattice:
@@ -265,7 +281,9 @@ class Atom:
     def set_orbitals(self, orbitals=None):
         assert set(orbitals).issubset(set(Atom.ORBITALS_ALL)), 'wrong orbitals'
         self.orbitals = orbitals
-
+    
+    def __repr__(self):
+        return '{} {}'.format(self.element, self.pos)
 
 def fcc_ge_sys():
     params = {

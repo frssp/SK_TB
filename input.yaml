@@ -1,0 +1,50 @@
+struct:
+    name: 'fcc_ge'
+    POSCAR_path: ./POSCAR
+    NN_length: 2.7
+    periodicity: [True, True, True]
+
+orbitals:
+    Ge:
+        ['s', 'px', 'py', 'pz', 'dxy', 'dyz', 'dxz', 'dx2-y2', 'dz2', 'S']
+
+params:
+    Ge:
+        e_s: -3.2967
+        e_p: 4.6560
+        e_d: 13.0143
+        e_S: 19.1725
+    GeGe:
+        V_sss: -1.5003
+        V_SSs: -3.6029
+        V_sSs: -1.9206
+        V_sps: 2.7986
+        V_Sps: 2.8177
+        V_sds: -2.8028
+        V_Sds: -0.6209
+        V_pps: 4.2541
+        V_ppp: -1.6510
+        V_pds: -2.2138
+        V_pdp: 1.9001
+        V_dds: -1.2172
+        V_ddp: 2.5054
+        V_ddd: -2.1389
+
+scale_params:
+    GeGe:
+        d_0: 2.44924974571
+        n_sss: 3.631
+        n_SSs: 0 
+        n_sSs: 0
+        n_sps: 3.713
+        n_pps: 2.030
+        n_ppp: 4.025
+        n_sds: 1.931
+        n_Sps: 1.830
+        n_pds: 1.759
+        n_pdp: 1.872
+        n_dds: 2.
+        n_ddp: 2.
+        n_ddd: 2.
+        n_Sds: 2.
+
