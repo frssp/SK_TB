@@ -4,6 +4,12 @@ struct:
     NN_length: 2.7
     periodicity: [True, True, True]
 
+kpt_paths:
+    kpt_den: 30
+    sp_kpts:
+        - [[0.5, 0.5, 0.5], [0., 0., 0.], [0., 0.5, 0.5], [0.25, 0.625, 0.625]]
+        - [[0.375, 0.75, 0.375], [0., 0., 0.]]
+
 orbitals:
     Ge:
         ['s', 'px', 'py', 'pz', 'dxy', 'dyz', 'dxz', 'dx2-y2', 'dz2', 'S']
