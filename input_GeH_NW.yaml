@@ -1,0 +1,55 @@
+struct:
+    name: 'GeNW'
+    POSCAR_path: ./POSCAR_NW
+    NN_length:  2.7
+    periodicity: [False, False, True]
+
+kpt_paths:
+    kpt_den: 30
+    sp_kpts:
+        - [[0, 0, 0],  [0., 0., 0.5]]
+
+orbitals:
+    H:
+        ['s']
+    Ge:
+        ['s', 'px', 'py', 'pz', 'dxy', 'dyz', 'dxz', 'dx2-y2', 'dz2', 'S']
+
+params:
+    H:
+        e_s: 0.20505
+
+    Ge:
+        e_s: -3.44070
+        e_p: 4.13420
+        e_d: 13.2395
+        e_S: 19.1761
+
+    HH:
+        V_sss: 0
+
+    HGe:
+        V_sss: -3.61897
+        V_sps: 4.08147
+        V_sds: 0
+        V_sSs: 0
+    
+    GeGe:
+        V_sss: -1.5319
+        V_SSs: -3.5836
+        V_sSs: -1.9099
+        V_sps: 2.7737
+        V_Sps: 2.0249
+        V_sds: -3.1063
+        V_Sds: -0.8989
+        V_pps: 4.0981
+        V_ppp: -1.5223
+        V_pds: -1.8229
+        V_pdp: 1.9001
+        V_dds: -1.2172
+        V_ddp: 2.5054
+        V_ddd: -2.1389
+
+scale_params:
+    null
+    
