@@ -1,7 +1,7 @@
 #/usr/local/bin/python
 import numpy as np
 from system import System, Structure, Lattice, Atom
-from tb_params import HOPPING_INTEGRALS
+from tb_params import get_hop_int
 
 
 class Hamiltonian(object):
@@ -74,6 +74,9 @@ class Hamiltonian(object):
             else:
                 return dist_vec / np.linalg.norm(dist_vec)
 
+        def get_ind(atom_1_i, orbit_1_i, element_1, orbit_1):
+            return self.system.all_iter.index((atom_1_i, orbit_1_i, element_1, orbit_1))
+
         params = self.system.params
 
         # TODO spin interactions
@@ -82,33 +85,26 @@ class Hamiltonian(object):
         dist_mat_vec = self.system.structure.dist_mat_vec
         bond_mat = self.system.structure.bond_mat
 
-        # add scaling function
-        for ind_1, (atom_1_i, orbit_1_i, element_1, orbit_1) in enumerate(self.system.all_iter):
-            for ind_2, (atom_2_i, orbit_2_i, element_2, orbit_2) in enumerate(self.system.all_iter):
-                # only lower lower-triangular part
-                # problem occurs ... | atom 1 | atom 1 | atom 1| ...
-                # if ind_1 > ind_2:
-                #     continue
-
-                hop_int = HOPPING_INTEGRALS[Hamiltonian.get_orb_ind(orbit_1)][Hamiltonian.get_orb_ind(orbit_2)]
-
+        for atom_1_i, atom_1 in enumerate(self.system.structure.atoms):
+            for atom_2_i, atom_2 in enumerate(self.system.structure.atoms):
                 for image_ind in range(self.system.structure.max_image):
-                    # skip unbonding pairs
                     if bond_mat[image_ind, atom_1_i, atom_2_i] == 0:
                         continue
-                    
                     param_element = self.system.get_params(atom_1_i, atom_2_i, image_ind)
-                    hop_int_ele = hop_int.subs(param_element)
-                    
+
                     # get direction cosines
                     dist_vec = dist_mat_vec[image_ind, atom_1_i, atom_2_i, :]
                     l, m, n = get_dir_cos(dist_vec)
                     param_lmn = dict({'l': l, 'm': m, 'n': n,})
+                    param_element.update(param_lmn)
+                    hop_int_pair = get_hop_int(**param_element)
 
-                    # sympy might be slow 
-                    # May be just function is enough?
-                    hop_int_ = hop_int_ele.subs(param_lmn)
-                    self.H_wo_g[image_ind, ind_1, ind_2] = hop_int_.subs(param_element)
+                    for orbit_1_i, orbit_1 in enumerate(atom_1.orbitals):
+                        for orbit_2_i, orbit_2 in enumerate(atom_2.orbitals):
+                            hop_int_ = hop_int_pair[Hamiltonian.get_orb_ind(orbit_1)][Hamiltonian.get_orb_ind(orbit_2)]                            
+                            ind_1 = get_ind(atom_1_i, orbit_1_i, atom_1.element, orbit_1)
+                            ind_2 = get_ind(atom_2_i, orbit_2_i, atom_2.element, orbit_2)
+                            self.H_wo_g[image_ind, ind_1, ind_2] = hop_int_
         
         # real hermitian -> symmetric
         # self.H_wo_g += np.transpose(self.H_wo_g, [0, 2, 1])#[range(self.H_wo_g.shape[0])[::-1],:,:]
