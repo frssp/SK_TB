@@ -15,7 +15,10 @@ class System(object):
         self.params = parameters
         self.scale_params = scale_params
 
-        assert self.params.keys() == self.get_param_key(), 'wrong parameter set'
+        assert set(self.params.keys()) == set(self.get_param_key()), \
+                'wrong parameter set\n' + \
+                'given: {}\n'.format(self.params.keys()) + \
+                'required: {}'.format(self.get_param_key())
         assert self.chk_scale_param_key(), \
                'The hoping parameters and the exponent parameters are not consistent!'
 
@@ -41,7 +44,7 @@ class System(object):
         elements = self.structure.get_elements()
         key_list = []
         key_list += elements
-        for key in itertools.product(elements, repeat=2):
+        for key in itertools.combinations_with_replacement(elements, r=2):
             key_list.append(''.join(key))
         return key_list
 
@@ -50,6 +53,7 @@ class System(object):
         """
         if self.scale_params is None:
             return True
+
         elements = self.structure.get_elements()
         key_list = []
         for key in itertools.product(elements, repeat=2):
@@ -68,11 +72,21 @@ class System(object):
     def get_params(self, atom_1_i, atom_2_i, image_i):
         """ return parameters dictionary
         """
+        def get_pair(key_list, ele_1, ele_2):
+            # key_list = self.system.get_param_key()
+            if '{}{}'.format(ele_1, ele_2) in key_list:
+                return '{}{}'.format(ele_1, ele_2)
+            elif '{}{}'.format(ele_2, ele_1) in key_list:
+                return '{}{}'.format(ele_2, ele_1)
+            else:
+                return None
+
+        atoms = self.structure.atoms
+        pair = get_pair(self.get_param_key(), atoms[atom_1_i].element, atoms[atom_2_i].element)
+
         if self.scale_params is None:
-            return self.params
+            return self.params[pair]
         else:
-            atoms = self.structure.atoms
-            pair = '{}{}'.format(atoms[atom_1_i].element,atoms[atom_2_i].element)
             d_0 = self.scale_params[pair]['d_0']
             d = self.structure.dist_mat[image_i, atom_1_i, atom_2_i]
             factor = (d_0 / float(d))
@@ -138,7 +152,7 @@ class Structure(object):
                 return 0
             if l_min:
                 diff = diff - np.round(diff)
-            diff = np.dot(lat_vecs.T,diff)
+            diff = np.dot(lat_vecs.T, diff)
             return diff
 
         n_atom = len(self.atoms)
@@ -158,7 +172,7 @@ class Structure(object):
         for image_i, image in enumerate(itertools.product(*periodic_image)):
             for i, atom1 in enumerate(atoms):
                 for j, atom2 in enumerate(atoms):
-                    diff = get_dist_vec(atom1.pos + np.array(image), atom2.pos, lat_vecs)
+                    diff = get_dist_vec(atom1.pos + image, atom2.pos, lat_vecs) #+ np.dot(lat_vecs.T, image)
                     d_mat[image_i, i, j, :] = diff
         return d_mat
 
@@ -285,96 +299,6 @@ class Atom:
     def __repr__(self):
         return '{} {}'.format(self.element, self.pos)
 
-def fcc_ge_sys():
-    params = {
-        'Ge': {
-            'e_s': -2.55247,
-            'e_p': 4.48593,
-            'e_d': 14.01053,
-            'e_S': 23.44607,
-        },
-        'GeGe': {
-            'V_sss': -1.86600,
-            'V_sps': 2.91067,
-            'V_ppp': -1.49207,
-            'V_pps': 4.08481,
-
-            'V_sds': -2.23992,
-            'V_pds': -1.66657,
-            'V_pdp': 2.39936,
-            'V_dds': -1.82945,
-            'V_ddp': 3.08177,
-            'V_ddd': -1.56676,
-            
-            'V_SSs': -4.51331,
-            'V_sSs': -1.39107,
-            'V_Sps': 3.06822,
-            'V_Sds': -0.77711
-        }
-    }
-    # PhysRevB.57.6493
-    params = {
-        'Ge': {
-            'e_s': -3.2967,
-            'e_p': 4.6560,
-            'e_d': 13.0143,
-            'e_S': 19.1725,
-        },
-        'GeGe': {
-            'V_sss': -1.5003,
-            'V_SSs': -3.6029,
-            'V_sSs': -1.9206,
-
-            'V_sps': 2.7986,
-            'V_Sps': 2.8177,
-            'V_sds': -2.8028,
-            'V_Sds': -0.6209,
-            
-            'V_pps': 4.2541,
-            'V_ppp': -1.6510,
-
-            'V_pds': -2.2138,
-            'V_pdp': 1.9001,
-
-            'V_dds': -1.2172,
-            'V_ddp': 2.5054,
-            'V_ddd': -2.1389,
-            
-        }
-    }
-    # PhysRevB.57.6493
-    scale_params = {
-        'GeGe':{
-            'd_0': 5.6563 * np.sqrt(3) / 4.,
-            'n_sss': 3.631,
-            'n_SSs': 0, 'n_sSs': 0,
-            'n_sps': 3.713,
-            'n_pps': 2.030,
-            'n_ppp': 4.025,
-            'n_sds': 1.931,
-            'n_Sps': 1.830,
-            'n_pds': 1.759,
-            'n_pdp': 1.872,
-            'n_dds': 2., 'n_ddp': 2., 'n_ddd': 2., 'n_Sds': 2.
-        }
-    }
-    orbitals = {'Ge': ['s', 'px', 'py', 'pz', 'dxy', 'dyz', 'dxz', 'dx2-y2', 'dz2', 'S']}
-
-    fcc_ge = fcc_ge_struct()
-    fcc_ge_sys = System(fcc_ge, orbitals, params, scale_params)
-
-    return fcc_ge_sys
-
-def fcc_ge_struct():
-    a = 5.6563
-    lat = Lattice(np.array([1 / 2. * np.array([1., 1., 0.]),
-                            1 / 2. * np.array([0., 1., 1.]),
-                            1 / 2. * np.array([1., 0., 1.])]), a)
-    atoms = [Atom('Ge', np.array([0., 0., 0.])), 
-             Atom('Ge', np.array([1., 1., 1.])/4.)]
-    fcc_ge = Structure(lat, atoms, name='fcc_ge')
-    return fcc_ge
-
 
 if __name__ == '__main__':
-    fcc_ge_sys()
+    pass

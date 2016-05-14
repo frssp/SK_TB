@@ -48,6 +48,6 @@ class Sys_input():
 
 if __name__ == '__main__':
     """ test """
-    sys_input = Sys_input('./input.yaml')
-    sys_input.get_system()
+    sys_input = Sys_input('./input_GeH_NW.yaml')
+    sys_input.system
     
