@@ -67,7 +67,8 @@ class System(object):
             scale_params = self.scale_params[pair]
             if scale_params is None:
                 continue
-            hop_orbit = set([hop.replace('V_', '') for hop in self.params[pair]])
+            hop_orbit = set([hop.replace('V_', '') for hop in self.params[pair]
+                             if 'V_' in hop])
             exp_orbit = set([hop.replace('n_', '') for hop in scale_params
                              if 'n_' in hop])
             
@@ -108,7 +109,7 @@ class Structure(object):
     """ atomic structure
     """
 
-    def __init__(self, lattice, atoms, NN_length=2.7, periodicity=None, name=None):
+    def __init__(self, lattice, atoms, NN_length=2.7, periodicity=None, name=None, bond_cut=None):
         """Args:
             lattice:
                 Lattice object
@@ -123,6 +124,7 @@ class Structure(object):
         self.lattice = lattice
         self.atoms = atoms
         self.NN_length = NN_length
+        self.bond_cut = bond_cut
         self.periodicity = periodicity or [True, True, True]
         self.max_image = 3 ** np.sum(self.periodicity)
 
@@ -131,11 +133,38 @@ class Structure(object):
         self.dist_mat = self.get_dist_matrix()
 
     def get_bond_mat(self):
+        def get_cutoff(atom_1, atom_2):
+            ele_1 = atom_1.element
+            ele_2 = atom_2.element
+            key_list = self.bond_cut.keys()
+            if '{}{}'.format(ele_1, ele_2) in key_list:
+                pair = '{}{}'.format(ele_1, ele_2)
+            elif '{}{}'.format(ele_2, ele_1) in key_list:
+                pair = '{}{}'.format(ele_2, ele_1)
+            else:
+                return None
+            return self.bond_cut[pair]
+
         max_image = self.max_image
         n_atom = len(self.atoms)
-        bond_mat = np.zeros((max_image, n_atom, n_atom))
+        bond_mat = np.zeros((max_image, n_atom, n_atom), dtype=bool)
         dist_mat = self.get_dist_matrix()
-        bond_mat = dist_mat < self.NN_length
+        # bond_mat = dist_mat < self.NN_length
+        atoms = self.atoms
+        periodic_image = []
+        for period in self.periodicity:
+            if period:
+                periodic_image.append(np.arange(3) - 1)
+            else:
+                periodic_image.append([0])
+
+        for image_i, image in enumerate(itertools.product(*periodic_image)):
+            for i, atom1 in enumerate(atoms):
+                for j, atom2 in enumerate(atoms):
+                    cutoff = get_cutoff(atom1, atom2)['NN']
+                    if cutoff is None:
+                        continue
+                    bond_mat[image_i, i, j] = dist_mat[image_i, i, j] < cutoff
         bond_mat_2 = dist_mat > 0
 
         return bond_mat * bond_mat_2
@@ -184,7 +213,6 @@ class Structure(object):
         """return list of elements eg) ['Si', 'O']"""
         from collections import OrderedDict
         return list(OrderedDict.fromkeys([atom.element for atom in self.atoms]))
-
 
     @staticmethod
     def read_poscar(file_name='./POSCAR', kwargs={}):

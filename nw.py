@@ -20,7 +20,7 @@ def main():
 
     eigs_k = np.array(eigs_k).T
     
-    draw_band(kpts_len, eigs_k, n_band=40)
+    draw_band(kpts_len, eigs_k)
 
 
 if __name__ == '__main__':

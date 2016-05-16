@@ -12,6 +12,7 @@ class Sys_input():
             self.struct_path = conf['struct']['POSCAR_path']
             self.periodicity = conf['struct']['periodicity']
             self.NN_length = conf['struct']['NN_length']
+            self.bond_cut = conf['struct']['bond_cut']
 
             # read kpoints path
             self.kpt_den = conf['kpt_paths']['kpt_den']
@@ -27,7 +28,8 @@ class Sys_input():
     def _get_system(self):
         kwargs = {'NN_length': self.NN_length,
                   'periodicity': self.periodicity,
-                  'name': self.name}
+                  'name': self.name,
+                  'bond_cut': self.bond_cut}
         struct = system.Structure.read_poscar(self.struct_path, kwargs)
 
         sys = system.System(struct, self.orbitals, self.params, self.scale_params)
@@ -49,5 +51,4 @@ class Sys_input():
 if __name__ == '__main__':
     """ test """
     sys_input = Sys_input('./input_GeH_NW.yaml')
-    sys_input.system
-    
+    sys = sys_input.system

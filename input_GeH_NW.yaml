@@ -3,6 +3,13 @@ struct:
     POSCAR_path: ./POSCAR_NW
     NN_length:  2.7
     periodicity: [False, False, True]
+    bond_cut:
+        HH:
+            NN: null
+        HGe:
+            NN: 2.7
+        GeGe:
+            NN: 2.7
 
 kpt_paths:
     kpt_den: 30
@@ -15,6 +22,7 @@ orbitals:
     Ge:
         ['s', 'px', 'py', 'pz', 'dxy', 'dyz', 'dxz', 'dx2-y2', 'dz2', 'S']
 
+
 params:
     H:
         e_s: 0.20505
@@ -26,7 +34,7 @@ params:
         e_S: 19.1761
 
     HH:
-        V_sss: 0
+        V_sss: 11111
 
     HGe:
         V_sss: -3.61897
