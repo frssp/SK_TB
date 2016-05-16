@@ -118,39 +118,6 @@ class Hamiltonian(object):
             self.H_wo_g[self.system.structure.max_image/2, H_ind, H_ind] = e_ele
             H_ind += 1
 
-def get_kpt_path(sp_kpts, kpt_den=10):
-    kpts = []
-    kpts.append(sp_kpts[0])
-    for kpt_ind, kpt in enumerate(sp_kpts):
-        if kpt_ind == len(sp_kpts) - 1:
-            break
-        kpt_i = kpt
-        kpt_f = sp_kpts[kpt_ind + 1]
-        for seg_i in range(kpt_den):
-            frac = (seg_i + 1.) / float(kpt_den)
-            kpt_seg = kpt_f * frac + kpt_i * (1. - frac)
-            kpts.append(kpt_seg)
-    return kpts
-
-def get_kpt_len(kpts, lat_mat):
-    
-    rec_lat_mat = np.linalg.inv(lat_mat).T
-    
-    kpts_cart = []
-    for kpt in kpts:
-        kpts_cart.append(np.dot(rec_lat_mat, kpt))
-    kpts_len = []
-
-    for kpt_ind, kpt in enumerate(kpts_cart):
-        
-        # continue
-        kpt_diff = kpt - kpts_cart[kpt_ind - 1]
-        kpts_len.append(np.linalg.norm(kpt_diff))
-    kpts_len[0] = 0
-    kpts_len = np.cumsum(kpts_len)
-
-
-    return kpts_len
 
 if __name__ == '__main__':
     pass
