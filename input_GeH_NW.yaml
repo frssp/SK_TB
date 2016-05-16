@@ -51,5 +51,23 @@ params:
         V_ddd: -2.1389
 
 scale_params:
-    null
-    
+    GeGe:
+        d_0: 2.44924974571
+        n_sss: 3.631
+        n_SSs: 0 
+        n_sSs: 0
+        n_sps: 3.713
+        n_pps: 2.030
+        n_ppp: 4.025
+        n_sds: 1.931
+        n_Sps: 1.830
+        n_pds: 1.759
+        n_pdp: 1.872
+        n_dds: 2.
+        n_ddp: 2.
+        n_ddd: 2.
+        n_Sds: 2.
+    HH:
+        null
+    HGe:
+        null

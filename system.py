@@ -15,7 +15,7 @@ class System(object):
         self.params = parameters
         self.scale_params = scale_params
 
-        assert set(self.params.keys()) == set(self.get_param_key()), \
+        assert set(self.get_param_key()).issubset(set(self.params.keys())), \
                 'wrong parameter set\n' + \
                 'given: {}\n'.format(self.params.keys()) + \
                 'required: {}'.format(self.get_param_key())
@@ -55,15 +55,20 @@ class System(object):
             return True
 
         elements = self.structure.get_elements()
-        key_list = []
-        for key in itertools.product(elements, repeat=2):
-            key_list.append(''.join(key))
+        key_list = self.get_param_key()
+        for ele in elements:
+            key_list.remove(ele)
+        # for key in itertools.product(elements, repeat=2):
+        #     key_list.append(''.join(key))
         
         # compare hopping term and exponent
         l_consist = True
         for pair in key_list:
+            scale_params = self.scale_params[pair]
+            if scale_params is None:
+                continue
             hop_orbit = set([hop.replace('V_', '') for hop in self.params[pair]])
-            exp_orbit = set([hop.replace('n_', '') for hop in self.scale_params[pair]
+            exp_orbit = set([hop.replace('n_', '') for hop in scale_params
                              if 'n_' in hop])
             
             l_consist = l_consist and exp_orbit == hop_orbit
@@ -83,17 +88,16 @@ class System(object):
 
         atoms = self.structure.atoms
         pair = get_pair(self.get_param_key(), atoms[atom_1_i].element, atoms[atom_2_i].element)
-
-        if self.scale_params is None:
+        scale_params = self.scale_params[pair]
+        if scale_params is None:
             return self.params[pair]
         else:
-            d_0 = self.scale_params[pair]['d_0']
+            d_0 = scale_params['d_0']
             d = self.structure.dist_mat[image_i, atom_1_i, atom_2_i]
             factor = (d_0 / float(d))
 
             params_scaled = dict()
             hop_params = self.params[pair]
-            scale_params = self.scale_params[pair]
             for key, hop in hop_params.iteritems():
                 orbit = key.replace('V_', 'n_')
                 params_scaled[key] = hop * factor ** scale_params[orbit]
