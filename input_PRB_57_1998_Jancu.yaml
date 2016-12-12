@@ -1,0 +1,49 @@
+struct:
+    name: 'Ge'
+    POSCAR_path: ./POSCAR
+    NN_length:  2.7
+    periodicity: [True, True, True]
+    bond_cut:
+        GeGe:
+            NN: 2.7
+
+kpt_paths:
+    kpt_den: 100
+    sp_kpts:
+       # - [[0., 0., 0.], [0.5, 0.5, 0.5]]
+       - [[0.5, 0.5, 0.5], [0., 0., 0.], [0., 0.5, 0.5], [0.25, 0.625, 0.625]]
+       - [[0.375, 0.75, 0.375], [0., 0., 0.]]
+
+orbitals:
+    Ge:
+        ['s', 'px', 'py', 'pz', 'dxy', 'dyz', 'dxz', 'dx2-y2', 'dz2', 'S']
+
+
+params:
+#Ge : Phys Rev B 57, 6493 (1998) Jancu et al
+
+    Ge:
+        e_s: -3.2967
+        e_p: 4.6560
+        e_d: 13.0143
+        e_S: 19.1725
+        lambda: 0.1325
+    GeGe:
+        V_sss: -1.5003
+        V_SSs: -3.6029
+        V_sSs: -1.9206
+        V_sps: 2.7986
+        V_Sps: 2.8177
+        V_sds: -2.8028
+        V_Sds: -0.6209
+        V_pps: 4.2541
+        V_ppp: -1.6510
+        V_pds: -2.2138
+        V_pdp: 1.9001
+        V_dds: -1.2172
+        V_ddp: 2.5054
+        V_ddd: -2.1389
+
+scale_params:
+    GeGe: null
+

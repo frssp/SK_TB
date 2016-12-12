@@ -75,7 +75,7 @@ class System(object):
             l_consist = l_consist and exp_orbit == hop_orbit
         return l_consist
 
-    def get_params(self, atom_1_i, atom_2_i, image_i):
+    def get_hop_params(self, atom_1_i, atom_2_i, image_i):
         """ return parameters dictionary
         """
         def get_pair(key_list, ele_1, ele_2):
@@ -104,12 +104,258 @@ class System(object):
                 params_scaled[key] = hop * factor ** scale_params[orbit]
             return params_scaled
 
+    def calc_volume(self, atom_i):
+        """ calc volume of the tetrahedron 
+        """ 
+        struct = self.structure
+        dist_mat_vec = struct.dist_mat_vec
+        bond_mat = struct.bond_mat
+        dist_vec = dist_mat_vec[:, atom_i, :]
+        bond = bond_mat[:, atom_i, :]
+
+        d_mat = dist_vec[bond]
+        assert len(d_mat) == 4, 'tetrahedron required! # of bond = {}'.format(len(d_mat))
+        a, b, c, d = d_mat
+        vol = 1/6. * np.linalg.det([a-d, b-d, c-d])
+        print vol
+
+    def get_onsite_term(self, atom_i):
+        """ calc onsite term
+        """
+        def get_onsite_s(e_s, vol_ratio, alpha):
+            return (e_s + alpha * vol_ratio) * np.eye(1)
+
+        def get_onsite_p(e_p, vol_ratio, alpha, beta_0, beta_1, delta_d, dir_cos):
+            b_term_sum = 0
+            for d, dc in zip(delta_d, dir_cos):
+                beta = beta_0 + beta_1 * d
+                l, m, n = dc
+                lm = l * m
+                mn = m * n
+                nl = n * l
+                b_term = np.array([[l ** 2, lm, nl],
+                                   [lm, m ** 2, mn],
+                                   [nl, mn, n ** 2]]) - 1 / 3. * np.eye(3)
+                b_term_sum += beta * b_term
+            return (e_p + alpha * vol_ratio) * np.eye(3) + b_term_sum
+            
+        def get_onsite_d(e_d, vol_ratio, alpha, beta, gamma, delta_d, dir_cos):
+            b_term_sum = 0
+            g_term_sum = 0
+            for d, dc in zip(delta_d, dir_cos):
+
+                l, m, n = dc
+                lm = l * m
+                mn = m * n
+                nl = n * l
+                irt3 = 1 / np.sqrt(3)
+                u = (l ** 2 - m ** 2) / 2.
+                v = (3 * n ** 2 - 1.) / 2 * irt3
+                b_term = np.array([[l ** 2, -lm, -nl, mn, -irt3*mn],
+                                   [-lm, m ** 2, -mn, -nl, -irt3*nl],
+                                   [-nl, -mn, n ** 2, 0, 2*irt3*lm],
+                                   [mn, -nl, 0, n**2, 2*irt3*u],
+                                   [-irt3*mn, -irt3*nl, 2*irt3*lm, 2*irt3*u, -n**2 + 2/3.]]) - 1 / 3. * np.eye(5)
+                g_term = np.array([[mn**2, nl*mn, lm*mn, mn*u, mn*v],
+                                   [nl*mn, nl**2, nl*lm, nl*u, nl*v],
+                                   [lm*mn, lm*nl, lm**2, lm*u, lm*v],
+                                   [mn*u, nl*u, lm*u, u**2, u*v],
+                                   [mn*v, nl*v, lm*v, u*v, v**2]])
+
+                b_term_sum += beta * b_term
+                g_term_sum += gamma * g_term
+
+            return (e_d + alpha * vol_ratio) * np.eye(5) + beta * b_term + gamma * g_term
+
+        def get_onsite_pd(beta_0, beta_1, gamma_0, gamma_1, delta_d, dir_cos):
+            b_term_sum = 0
+            g_term_sum = 0
+            for d, dc in zip(delta_d, dir_cos):
+                beta = beta_0 + beta_1 * d
+                gamma = gamma_0 + gamma_1 * d
+
+                l, m, n = dc
+                lm = l * m
+                mn = m * n
+                nl = n * l
+                lmn = l * m * n
+                irt3 = 1 / np.sqrt(3)
+                u = (l ** 2 - m ** 2) / 2.
+                v = (3 * n ** 2 - 1.) / 2 * irt3
+
+                b_term = np.array([[0, n, m, l, -irt3*l],
+                                   [n, 0, l, -m, -irt3*m],
+                                   [m, l, 0, 0, 2*irt3*n]])
+                g_term = np.array([[lmn, nl*l, lm*l, l*u, l*v],
+                                   [mn*m, lmn, lm*m, m*u, m*v],
+                                   [mn*n, nl*n, lmn, n*u, n*v]])
+
+                b_term_sum += beta * b_term
+                g_term_sum += gamma * g_term
+            return b_term_sum + g_term_sum
+
+        def get_onsite_sp(beta, dir_cos):
+            b_term_sum = 0
+            for dc in dir_cos:
+                l, m, n = dc
+                b_term = np.array([[l, m, n]])
+                b_term_sum += beta * b_term
+            return b_term_sum
+
+        def get_onsite_sd(beta, dir_cos):
+            b_term_sum = 0
+            for dc in dir_cos:
+
+                l, m, n = dc
+                lm = l * m
+                mn = m * n
+                nl = n * l
+                irt3 = 1 / np.sqrt(3)
+                u = (l ** 2 - m ** 2) / 2.
+                v = (3 * n ** 2 - 1.) / 2 * irt3
+                b_term = np.array([[mn, nl, lm, u, v]])
+
+                b_term_sum += beta * b_term
+            return b_term_sum
+
+
+        atoms = self.structure.atoms
+        params = self.params[atoms[atom_i].element]
+
+        if self.scale_params is None or \
+            (not atoms[atom_i].element in self.scale_params or \
+             self.scale_params[atoms[atom_i].element] is None):
+            print 'a'
+            e_s = params['e_s']
+            if 'px' in  atoms[atom_i].orbitals:
+                e_p = params['e_p']
+            if 'dxy' in  atoms[atom_i].orbitals:
+                e_d = params['e_d']
+            if 'S' in  atoms[atom_i].orbitals:
+                e_S = params['e_S']
+
+            e_orbit_list =[]
+            if 's' in atoms[atom_i].orbitals:
+                e_orbit_list += [e_s]
+            if 'px' in atoms[atom_i].orbitals:
+                e_orbit_list += [e_p]
+            if 'py' in atoms[atom_i].orbitals:
+                e_orbit_list += [e_p]
+            if 'pz' in atoms[atom_i].orbitals:
+                e_orbit_list += [e_p]
+            if 'dxy' in atoms[atom_i].orbitals:
+                e_orbit_list += [e_d]
+            if 'dyz' in atoms[atom_i].orbitals:
+                e_orbit_list += [e_d]
+            if 'dxz' in atoms[atom_i].orbitals:
+                e_orbit_list += [e_d]
+            if 'dx2-y2' in atoms[atom_i].orbitals:
+                e_orbit_list += [e_d]
+            if 'dz2' in atoms[atom_i].orbitals:
+                e_orbit_list += [e_d]
+            if 'S' in atoms[atom_i].orbitals:
+                e_orbit_list += [e_S]
+            return np.diag(e_orbit_list)
+        else:
+            scale_params = self.scale_params[atoms[atom_i].element]
+
+            d_0 = scale_params['d_0']
+
+            struct = self.structure
+            dist_mat_vec = struct.dist_mat_vec
+            bond_mat = struct.bond_mat
+            dist_vec = dist_mat_vec[:, atom_i, :]
+            bond = bond_mat[:, atom_i, :]
+
+            d_mat = dist_vec[bond]
+
+            atom = struct.atoms[atom_i]
+            dir_cos = struct.dir_cos[:, atom_i, :, :][bond]
+            delta_d = (np.linalg.norm(d_mat, axis=-1) - d_0)/d_0
+
+            orbitals = atom.orbitals
+            n_orbitals = len(orbitals)
+            # onsite = np.zeros((n_orbitals, n_orbitals))
+            # assume ['s',
+            #             'px', 'py', 'pz',
+            #             'dxy', 'dyz', 'dxz', 'dx2-y2', 'dz2',
+            #             'S']
+            # TODO generic
+
+            vol = np.average(np.linalg.norm(d_mat, axis=-1))
+            vol = (vol**3 - d_0**3)/d_0**3
+            vol_ratio = vol
+
+            s_onsite = get_onsite_s(params['e_s'], vol_ratio, scale_params['a_s'])
+            S_onsite = get_onsite_s(params['e_S'], vol_ratio, scale_params['a_S'])
+
+            p_onsite = get_onsite_p(params['e_p'], vol_ratio, scale_params['a_p'], 
+                                    scale_params['b_p_0'], scale_params['b_p_1'], delta_d, dir_cos)
+
+            d_onsite = get_onsite_d(params['e_d'], vol_ratio, scale_params['a_d'], 
+                                    scale_params['b_d_0'], 0, delta_d, dir_cos)
+            
+            pd_onsite = get_onsite_pd(scale_params['b_pd_0'], scale_params['b_pd_1'], 
+                                      0, 0, delta_d, dir_cos)
+
+            sp_onsite = get_onsite_sp(scale_params['b_sp_0'], dir_cos)
+            Sp_onsite = get_onsite_sp(scale_params['b_Sp_0'], dir_cos)
+            sd_onsite = get_onsite_sd(scale_params['b_sd_0'], dir_cos)
+            Sd_onsite = get_onsite_sd(scale_params['b_Sd_0'], dir_cos)
+            sS_onsite = np.zeros((1,1))
+            pS_onsite = np.zeros((3,1))
+
+            onsite_term = np.bmat(np.r_[np.c_[s_onsite, sp_onsite, sd_onsite, sS_onsite],
+                                        np.c_[sp_onsite.T, p_onsite, pd_onsite, pS_onsite],
+                                        np.c_[sd_onsite.T, pd_onsite.T, d_onsite, Sd_onsite.T],
+                                        np.c_[sS_onsite.T, Sp_onsite, Sd_onsite, S_onsite]])
+            return onsite_term
+
+    def _get_soc_mat_i(self, atom_i):
+        # only for p_orbitals
+        atom = self.structure.atoms[atom_i]
+        param = self.params[atom.element]
+        orbitals = atom.orbitals
+
+        h_soc = np.zeros((len(orbitals)*2, len(orbitals)*2), dtype=complex)
+        if 'lambda' in param.keys():
+            assert ''.join(map(str, ['px', 'py', 'pz'])) in ''.join(map(str, orbitals)), \
+                   'px, py, and pz should be in orbitals'
+            # block_diag_list = []
+
+            for orbit_i, orbit in enumerate(orbitals):
+                if 'p' in orbit:
+                    break
+            lambda_p = param['lambda']
+            h_soc_p = np.array([[0,   0, -1j,   0,   0,   1],
+                                [0,   0,   0,  1j,   0,   0],
+                                [0,   0,   0,   0,   0, -1j],
+                                [0,   0,   0,   0, -1j,   0],
+                                [0,  -1,   0,   0,   0,   0],
+                                [0,   0,   0,   0,   0,   0]]) * lambda_p
+            h_soc_p += h_soc_p.conj().T
+            # orbit_i * 2 for spin 
+            h_soc[orbit_i*2: orbit_i*2+6, orbit_i*2: orbit_i*2+6] = h_soc_p
+            return h_soc
+        else:
+            return h_soc
+
+    def get_soc_mat(self):
+        import scipy.linalg
+        soc_i_list = []
+        for atom_i in range(len(self.structure.atoms)):
+            soc_i = self._get_soc_mat_i(atom_i)
+            soc_i_list.append(soc_i)
+
+        return scipy.linalg.block_diag(*soc_i_list)
+ 
+
 
 class Structure(object):
     """ atomic structure
     """
 
-    def __init__(self, lattice, atoms, NN_length=2.7, periodicity=None, name=None, bond_cut=None):
+    def __init__(self, lattice, atoms, periodicity=None, name=None, bond_cut=None):
         """Args:
             lattice:
                 Lattice object
@@ -123,7 +369,6 @@ class Structure(object):
         self.name = name or 'system'
         self.lattice = lattice
         self.atoms = atoms
-        self.NN_length = NN_length
         self.bond_cut = bond_cut
         self.periodicity = periodicity or [True, True, True]
         self.max_image = 3 ** np.sum(self.periodicity)
@@ -131,6 +376,7 @@ class Structure(object):
         self.bond_mat = self.get_bond_mat()
         self.dist_mat_vec = self.get_dist_matrix_vec()
         self.dist_mat = self.get_dist_matrix()
+        self.dir_cos = self.get_dir_cos_all()
 
     def get_bond_mat(self):
         def get_cutoff(atom_1, atom_2):
@@ -228,6 +474,21 @@ class Structure(object):
         structure = Structure(lattice, atoms, **kwargs)
         return structure
 
+    def get_dir_cos(self, image_i, atoms_i, atom_j):
+        """ return directional cos of distance vector """
+        dist_vec = self.dist_mat_vec[image_i, atoms_i, atom_j, :]
+        if np.linalg.norm(dist_vec) == 0:
+            return 0, 0, 0
+        else:
+            return dist_vec / np.linalg.norm(dist_vec)
+
+    def get_dir_cos_all(self):
+        dist_vec = self.dist_mat_vec
+        dist_norm = np.linalg.norm(dist_vec, axis=-1)
+        indx_zero = np.where(dist_norm == 0)
+        dist_norm[indx_zero]=1E-10
+        dir_cos = dist_vec / dist_norm[:,:,:, np.newaxis]
+        return dir_cos
 
 class Lattice:
     """represent lattice of structure

@@ -103,7 +103,13 @@ def get_hop_int(V_sss=0, V_sps=0, V_pps=0, V_ppp=0,
 
     hop_int[7][7] = 0.25 * (l ** 2 - m ** 2) ** 2 * (3 * V_dds - 4 * V_ddp + V_ddd) + (l ** 2 + m ** 2) * V_ddp + n ** 2 * V_ddd
     hop_int[8][8] = 0.75 * (l ** 2 + m ** 2) ** 2 * V_ddd + 3 * (l ** 2 + m ** 2) * n ** 2 * V_ddp + 0.25 * (l ** 2 + m ** 2 - 2*n ** 2) ** 2 * V_dds
+    #hop_int[7][8] = 0.25 * (l ** 2 - m ** 2) * (n ** 2 * (3 * V_dds - 4 * V_ddp + V_ddd) + V_ddd - V_dds)
+   # hop_int[8][7] = 0.25 * (l ** 2 - m ** 2) * (n ** 2 * (3 * V_dds - 4 * V_ddp + V_ddd) + V_ddd - V_dds)
+    
+    
     hop_int[7][8] = sqrt(3)*0.25 * (l ** 2 - m ** 2) * (n ** 2 * (2 * V_dds - 4 * V_ddp + V_ddd) + V_ddd - (l ** 2 + m ** 2) * V_dds)
+
+
     hop_int[8][7] = sqrt(3)*0.25 * (l ** 2 - m ** 2) * (n ** 2 * (2 * V_dds - 4 * V_ddp + V_ddd) + V_ddd - (l ** 2 + m ** 2) * V_dds)
 
     hop_int[9][9] = V_SSs

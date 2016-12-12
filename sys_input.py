@@ -11,7 +11,6 @@ class Sys_input():
             # read structure
             self.struct_path = conf['struct']['POSCAR_path']
             self.periodicity = conf['struct']['periodicity']
-            self.NN_length = conf['struct']['NN_length']
             self.bond_cut = conf['struct']['bond_cut']
 
             # read kpoints path
@@ -26,8 +25,7 @@ class Sys_input():
             self.system = self._get_system()
 
     def _get_system(self):
-        kwargs = {'NN_length': self.NN_length,
-                  'periodicity': self.periodicity,
+        kwargs = {'periodicity': self.periodicity,
                   'name': self.name,
                   'bond_cut': self.bond_cut}
         struct = system.Structure.read_poscar(self.struct_path, kwargs)
@@ -47,8 +45,10 @@ class Sys_input():
         return k_all_path, kpts_len
 
 
-
 if __name__ == '__main__':
     """ test """
-    sys_input = Sys_input('./input_GeH_NW.yaml')
+    sys_input = Sys_input('./input_Jancu_PRB_76_115202_2007.yaml')
     sys = sys_input.system
+
+    print sys.get_soc_mat()
+    # struct = sys.structure

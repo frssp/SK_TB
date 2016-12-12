@@ -1,0 +1,41 @@
+struct:
+    name: 'fcc_ge'
+    POSCAR_path: ./POSCAR_chain
+    bond_cut:
+        HH:
+            NN: null
+        HGe:
+            NN: 2.7
+        GeGe:
+            NN: 2.7
+    periodicity: [False, False, True]
+
+kpt_paths:
+    kpt_den: 50
+    sp_kpts:
+       - [[0.0, 0.0, 0.5], [0., 0., 0.]]
+
+
+#kpt_den: 100
+ #   sp_kpts:
+  #      - [[0.5, 0.5, 0.5], [0., 0., 0.], [0., 0.5, 0.5], [0.25, 0.625, 0.625]]
+   #     - [[0.375, 0.75, 0.375], [0., 0., 0.]]
+
+orbitals:
+    Ge:
+        ['s']
+
+params:
+    Ge:
+        e_s: -4.08253
+    GeGe:
+        V_sss: -1.49093
+scale_params:
+    Ge: 
+        null
+    GeGe:
+        null
+
+
+
+        
