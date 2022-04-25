@@ -7,7 +7,7 @@ def get_hop_int(V_sss=0, V_sps=0, V_pps=0, V_ppp=0,
                 V_SSs=0, V_sSs=0, V_Sps=0, V_Sds=0,
                 l=0, m=0, n=0):
 
-    hop_int = [[None for _ in xrange(10)] for __ in xrange(10)]
+    hop_int = [[None for _ in range(10)] for __ in range(10)]
 
     hop_int[0][0] = V_sss
     hop_int[0][1] = l * V_sps

@@ -51,7 +51,7 @@ class Hamiltonian(object):
                     phase = np.exp(2.*np.pi*1j * np.dot(kpt_cart, dist_vec))
                     g_mat[image_ind, ind_1, ind_2] = phase 
         # non-translated image_ind is self.system.structure.max_image/2
-        g_mat[self.system.structure.max_image/2, :, :] += np.eye(self.n_orbitals, dtype=complex)
+        g_mat[self.system.structure.max_image//2, :, :] += np.eye(self.n_orbitals, dtype=complex)
         return g_mat
 
     def calc_ham_wo_k(self):
@@ -109,8 +109,10 @@ class Hamiltonian(object):
 
             onsite_i = self.system.get_onsite_term(atom_i)
 
-            self.H_wo_g[self.system.structure.max_image/2, 
-                        H_ind: H_ind+len_orbitals, H_ind: H_ind+len_orbitals] = onsite_i
+            #print(self.system.structure.max_image//2, H_ind, (H_ind+len_orbitals), H_ind,(H_ind+len_orbitals) )
+            #exit()
+            self.H_wo_g[self.system.structure.max_image//2, 
+                        (H_ind):(H_ind+len_orbitals), (H_ind):(H_ind+len_orbitals)] = onsite_i
             H_ind += len_orbitals
 
 

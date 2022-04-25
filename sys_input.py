@@ -50,5 +50,5 @@ if __name__ == '__main__':
     sys_input = Sys_input('./input_Jancu_PRB_76_115202_2007.yaml')
     sys = sys_input.system
 
-    print sys.get_soc_mat()
+    print(sys.get_soc_mat())
     # struct = sys.structure

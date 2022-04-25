@@ -110,8 +110,8 @@ def readPRJCAR(file_name):
             energy_list = np.array(energy_list).reshape(shape_e)
             K_list = np.array(K_list).reshape(shape_K)
             return kpt_list_prim, k_wt_list_prim, energy_list, K_list, kpt_list
-    except Exception, e:
-        print e
+    except  e:
+        print(e)
         raise e
 
 
@@ -208,7 +208,7 @@ def readPROCAR_phase(file_name):
             n_kpts, n_bands, n_ions, n_orbits, orbit_names = \
                 _parse_procar_metadata(procar)
 
-            print n_orbits
+            print(n_orbits)
 
             Proj = np.zeros((n_kpts, n_bands, n_ions, n_orbits), float)
             Proj_cmplx = np.zeros((n_kpts, n_bands, n_ions, n_orbits), complex)
@@ -265,10 +265,10 @@ def readPROCAR_phase(file_name):
             return Kpts, k_wt, Eigs, Proj, Proj_cmplx, Occs
         else:
             return Kpts, k_wt, Eigs, Proj, Occs
-    except Exception, e:
-        print e
-        print line
-        print 'fail to read {}'.format(file_name)
+    except e:
+        print (e)
+        print (line)
+        print ('fail to read {}'.format(file_name))
 
 
 def readPROCAR(fileName='PROCAR', orbital=-1):
@@ -379,7 +379,7 @@ def readCONTCAR(fileName='CONTCAR', rtspecies=False, rt_comment=False):
             if DorC[0]=='D' or  DorC[0]=='d' : # Direct
                 coord = latticeVecs[0]*coord[0]+latticeVecs[1]*coord[1]+latticeVecs[2]*coord[2]
             else: 
-                print "check coord! it's not direct form"
+                print ("check coord! it's not direct form")
 
             atomSet.append([symbol,coord])
         k += 1
@@ -706,7 +706,7 @@ def get_eps(OUTCAR='./OUTCAR'):
         eps = [item for idx, item in enumerate(eps) if idx % 2 == 0]    
         return eps
     except IOError as e: 
-        print "I/O error({0}): {1}".format(e.errno, e.strerror)
+        print ("I/O error({0}): {1}".format(e.errno, e.strerror))
         return None
 
 def readTRANCAR(dir_name, file_name='TRANCAR'):
@@ -833,4 +833,4 @@ if __name__ == '__main__':
     # readPROCAR_phase(procar_12 + '/PROCAR')
     # readPRJCAR('/home/users/nwan/cj01/00_NW/R3/00_pristine/unfold/bulk/00_222/PRJCAR')
     stress = read_stress('./')
-    print stress
+    print (stress)
