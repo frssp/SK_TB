@@ -20,7 +20,7 @@ def main():
         eigs_k.append(eigs)
 
     eigs_k = np.array(eigs_k).T
-    print eigs_k[:,-1]
+    print(eigs_k[:,-1])
     draw_band(kpts_len, eigs_k)
 
 

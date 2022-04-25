@@ -117,7 +117,7 @@ class System(object):
         assert len(d_mat) == 4, 'tetrahedron required! # of bond = {}'.format(len(d_mat))
         a, b, c, d = d_mat
         vol = 1/6. * np.linalg.det([a-d, b-d, c-d])
-        print vol
+        print(vol)
 
     def get_onsite_term(self, atom_i):
         """ calc onsite term
@@ -225,7 +225,7 @@ class System(object):
         if self.scale_params is None or \
             (not atoms[atom_i].element in self.scale_params or \
              self.scale_params[atoms[atom_i].element] is None):
-            print 'a'
+            print('a')
             e_s = params['e_s']
             if 'px' in  atoms[atom_i].orbitals:
                 e_p = params['e_p']
